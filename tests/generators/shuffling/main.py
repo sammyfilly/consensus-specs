@@ -9,21 +9,27 @@ from eth2spec.test.helpers.constants import PHASE0, MINIMAL, MAINNET
 
 
 def generate_random_bytes(rng=random.Random(5566)):
-    random_bytes = bytes(rng.randint(0, 255) for _ in range(32))
-    return random_bytes
+    return bytes(rng.randint(0, 255) for _ in range(32))
 
 
 # NOTE: somehow the random.Random generated seeds do not have pickle issue.
 rng = random.Random(1234)
-seeds = [generate_random_bytes(rng) for i in range(30)]
+seeds = [generate_random_bytes(rng) for _ in range(30)]
 
 
 def shuffling_case_fn(spec, seed, count):
-    yield 'mapping', 'data', {
-        'seed': '0x' + seed.hex(),
-        'count': count,
-        'mapping': [int(spec.compute_shuffled_index(i, count, seed)) for i in range(count)]
-    }
+    yield (
+        'mapping',
+        'data',
+        {
+            'seed': f'0x{seed.hex()}',
+            'count': count,
+            'mapping': [
+                int(spec.compute_shuffled_index(i, count, seed))
+                for i in range(count)
+            ],
+        },
+    )
 
 
 def shuffling_case(spec, seed, count):

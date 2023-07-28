@@ -125,7 +125,7 @@ def is_post_fork(a, b) -> bool:
     prev_fork = PREVIOUS_FORK_OF[a]
     if prev_fork == b:
         return True
-    elif prev_fork == None:
+    elif prev_fork is None:
         return False
     else:
         return is_post_fork(prev_fork, b)
@@ -141,9 +141,7 @@ def get_fork_directory(fork):
 
 def _get_name_from_heading(heading: Heading) -> Optional[str]:
     last_child = heading.children[-1]
-    if isinstance(last_child, CodeSpan):
-        return last_child.children
-    return None
+    return last_child.children if isinstance(last_child, CodeSpan) else None
 
 
 def _get_source_from_code_block(block: FencedCode) -> str:
@@ -162,28 +160,25 @@ def _get_self_type_from_source(source: str) -> Optional[str]:
         return None
     if args[0].arg != 'self':
         return None
-    if args[0].annotation is None:
-        return None
-    return args[0].annotation.id
+    return None if args[0].annotation is None else args[0].annotation.id
 
 
 def _get_class_info_from_source(source: str) -> Tuple[str, Optional[str]]:
     class_def = ast.parse(source).body[0]
     base = class_def.bases[0]
-    if isinstance(base, ast.Name):
-        parent_class = base.id
-    else:
-        # NOTE: SSZ definition derives from earlier phase...
-        # e.g. `phase0.SignedBeaconBlock`
-        # TODO: check for consistency with other phases
-        parent_class = None
+    parent_class = base.id if isinstance(base, ast.Name) else None
     return class_def.name, parent_class
 
 
 def _is_constant_id(name: str) -> bool:
-    if name[0] not in string.ascii_uppercase + '_':
+    if name[0] not in f'{string.ascii_uppercase}_':
         return False
-    return all(map(lambda c: c in string.ascii_uppercase + '_' + string.digits, name[1:]))
+    return all(
+        map(
+            lambda c: c in f'{string.ascii_uppercase}_{string.digits}',
+            name[1:],
+        )
+    )
 
 
 def _load_kzg_trusted_setups(preset_name):
@@ -191,7 +186,7 @@ def _load_kzg_trusted_setups(preset_name):
     [TODO] it's not the final mainnet trusted setup.
     We will update it after the KZG ceremony.
     """
-    file_path = str(Path(__file__).parent) + '/presets/' + preset_name + '/trusted_setups/testing_trusted_setups.json'
+    file_path = f'{str(Path(__file__).parent)}/presets/{preset_name}/trusted_setups/testing_trusted_setups.json'
 
     with open(file_path, 'r') as f:
         json_data = json.load(f)
@@ -213,19 +208,16 @@ ETH2_SPEC_COMMENT_PREFIX = "eth2spec:"
 
 def _get_eth2_spec_comment(child: LinkRefDef) -> Optional[str]:
     _, _, title = child._parse_info
-    if not (title[0] == "(" and title[len(title)-1] == ")"):
+    if title[0] != "(" or title[len(title) - 1] != ")":
         return None
-    title = title[1:len(title)-1]
+    title = title[1:-1]
     if not title.startswith(ETH2_SPEC_COMMENT_PREFIX):
         return None
     return title[len(ETH2_SPEC_COMMENT_PREFIX):].strip()
 
 
 def _parse_value(name: str, typed_value: str, type_hint: Optional[str]=None) -> VariableDefinition:
-    comment = None
-    if name == "BLS12_381_Q":
-        comment = "noqa: E501"
-
+    comment = "noqa: E501" if name == "BLS12_381_Q" else None
     typed_value = typed_value.strip()
     if '(' not in typed_value:
         return VariableDefinition(type_name=None, value=typed_value, comment=comment, type_hint=type_hint)
@@ -293,7 +285,7 @@ def get_spec(file_name: Path, preset: Dict[str, str], config: Dict[str, str], pr
                 # NOTE: trim whitespace from spec
                 ssz_objects[current_name] = "\n".join(line.rstrip() for line in source.splitlines())
             else:
-                raise Exception("unrecognized python code element: " + source)
+                raise Exception(f"unrecognized python code element: {source}")
         elif isinstance(child, Table):
             for row in child.children:
                 cells = row.children
@@ -602,7 +594,7 @@ class BellatrixSpecBuilder(AltairSpecBuilder):
 
     @classmethod
     def imports(cls, preset_name: str):
-        return super().imports(preset_name) + f'''
+        return f'''{super().imports(preset_name)}
 from typing import Protocol
 from eth2spec.altair import {preset_name} as altair
 from eth2spec.utils.ssz.ssz_typing import Bytes8, Bytes20, ByteList, ByteVector
@@ -675,7 +667,7 @@ class CapellaSpecBuilder(BellatrixSpecBuilder):
 
     @classmethod
     def imports(cls, preset_name: str):
-        return super().imports(preset_name) + f'''
+        return f'''{super().imports(preset_name)}
 from eth2spec.bellatrix import {preset_name} as bellatrix
 '''
 
@@ -703,7 +695,7 @@ class DenebSpecBuilder(CapellaSpecBuilder):
 
     @classmethod
     def imports(cls, preset_name: str):
-        return super().imports(preset_name) + f'''
+        return f'''{super().imports(preset_name)}
 from eth2spec.capella import {preset_name} as capella
 '''
 
@@ -772,7 +764,7 @@ class EIP6110SpecBuilder(DenebSpecBuilder):
 
     @classmethod
     def imports(cls, preset_name: str):
-        return super().imports(preset_name) + f'''
+        return f'''{super().imports(preset_name)}
 from eth2spec.deneb import {preset_name} as deneb
 '''
 
@@ -785,7 +777,7 @@ class WhiskSpecBuilder(CapellaSpecBuilder):
 
     @classmethod
     def imports(cls, preset_name: str):
-        return super().imports(preset_name) + f'''
+        return f'''{super().imports(preset_name)}
 from eth2spec.capella import {preset_name} as capella
 '''
 
@@ -811,7 +803,7 @@ def is_byte_vector(value: str) -> bool:
 
 def make_function_abstract(protocol_def: ProtocolDefinition, key: str):
     function = protocol_def.functions[key].split('"""')
-    protocol_def.functions[key] = function[0] + "..."
+    protocol_def.functions[key] = f"{function[0]}..."
 
 
 def objects_to_spec(preset_name: str,
@@ -838,7 +830,7 @@ def objects_to_spec(preset_name: str,
 
         protocol = f"class {protocol_name}(Protocol):"
         for fn_source in protocol_def.functions.values():
-            fn_source = fn_source.replace("self: "+protocol_name, "self")
+            fn_source = fn_source.replace(f"self: {protocol_name}", "self")
             protocol += "\n\n" + textwrap.indent(fn_source, "    ")
         return protocol
 
@@ -856,7 +848,7 @@ def objects_to_spec(preset_name: str,
 
     # Access global dict of config vars for runtime configurables
     for name in spec_object.config_vars.keys():
-        functions_spec = re.sub(r"\b%s\b" % name, 'config.' + name, functions_spec)
+        functions_spec = re.sub(r"\b%s\b" % name, f'config.{name}', functions_spec)
 
     def format_config_var(name: str, vardef: VariableDefinition) -> str:
         if vardef.type_name is None:
@@ -873,7 +865,10 @@ def objects_to_spec(preset_name: str,
                              for k, v in spec_object.config_vars.items())
     config_spec += '\n\n\nconfig = Configuration(\n'
     config_spec += f'    PRESET_BASE="{preset_name}",\n'
-    config_spec += '\n'.join('    ' + format_config_var(k, v) for k, v in spec_object.config_vars.items())
+    config_spec += '\n'.join(
+        f'    {format_config_var(k, v)}'
+        for k, v in spec_object.config_vars.items()
+    )
     config_spec += '\n)\n'
 
     def format_constant(name: str, vardef: VariableDefinition) -> str:
@@ -891,9 +886,24 @@ def objects_to_spec(preset_name: str,
     constant_vars_spec = '# Constant vars\n' + '\n'.join(format_constant(k, v) for k, v in spec_object.constant_vars.items())
     preset_vars_spec = '# Preset vars\n' + '\n'.join(format_constant(k, v) for k, v in spec_object.preset_vars.items())
     ordered_class_objects_spec = '\n\n\n'.join(ordered_class_objects.values())
-    ssz_dep_constants = '\n'.join(map(lambda x: '%s = %s' % (x, builder.hardcoded_ssz_dep_constants()[x]), builder.hardcoded_ssz_dep_constants()))
-    ssz_dep_constants_verification = '\n'.join(map(lambda x: 'assert %s == %s' % (x, spec_object.ssz_dep_constants[x]), builder.hardcoded_ssz_dep_constants()))
-    custom_type_dep_constants = '\n'.join(map(lambda x: '%s = %s' % (x, builder.hardcoded_custom_type_dep_constants(spec_object)[x]), builder.hardcoded_custom_type_dep_constants(spec_object)))
+    ssz_dep_constants = '\n'.join(
+        map(
+            lambda x: f'{x} = {builder.hardcoded_ssz_dep_constants()[x]}',
+            builder.hardcoded_ssz_dep_constants(),
+        )
+    )
+    ssz_dep_constants_verification = '\n'.join(
+        map(
+            lambda x: f'assert {x} == {spec_object.ssz_dep_constants[x]}',
+            builder.hardcoded_ssz_dep_constants(),
+        )
+    )
+    custom_type_dep_constants = '\n'.join(
+        map(
+            lambda x: f'{x} = {builder.hardcoded_custom_type_dep_constants(spec_object)[x]}',
+            builder.hardcoded_custom_type_dep_constants(spec_object),
+        )
+    )
     spec = (
             builder.imports(preset_name)
             + builder.preparations()
@@ -935,7 +945,7 @@ T = TypeVar('T')
 
 
 def combine_dicts(old_dict: Dict[str, T], new_dict: Dict[str, T]) -> Dict[str, T]:
-    return {**old_dict, **new_dict}
+    return old_dict | new_dict
 
 
 ignored_dependencies = [
@@ -1010,14 +1020,13 @@ def parse_config_vars(conf: Dict[str, str]) -> Dict[str, str]:
     """
     Parses a dict of basic str/int/list types into a dict for insertion into the spec code.
     """
-    out: Dict[str, str] = dict()
-    for k, v in conf.items():
-        if isinstance(v, str) and (v.startswith("0x") or k == 'PRESET_BASE' or k == 'CONFIG_NAME'):
-            # Represent byte data with string, to avoid misinterpretation as big-endian int.
-            # Everything except PRESET_BASE and CONFIG_NAME is either byte data or an integer.
-            out[k] = f"'{v}'"
-        else:
-            out[k] = str(int(v))
+    out: Dict[str, str] = {
+        k: f"'{v}'"
+        if isinstance(v, str)
+        and (v.startswith("0x") or k == 'PRESET_BASE' or k == 'CONFIG_NAME')
+        else str(int(v))
+        for k, v in conf.items()
+    }
     return out
 
 
@@ -1034,7 +1043,7 @@ def load_preset(preset_files: Sequence[Path]) -> Dict[str, str]:
         if not set(fork_preset.keys()).isdisjoint(preset.keys()):
             duplicates = set(fork_preset.keys()).intersection(set(preset.keys()))
             raise Exception(f"duplicate config var(s) in preset files: {', '.join(duplicates)}")
-        preset.update(fork_preset)
+        preset |= fork_preset
     assert preset != {}
     return parse_config_vars(preset)
 
@@ -1125,31 +1134,33 @@ class PySpecCommand(Command):
                     if fork in EXTRA_SPEC_FILES:
                         self.md_doc_paths += EXTRA_SPEC_FILES[fork] + "\n"
 
-            if len(self.md_doc_paths) == 0:
-                raise Exception('no markdown files specified, and spec fork "%s" is unknown', self.spec_fork)
+        if len(self.md_doc_paths) == 0:
+            raise Exception('no markdown files specified, and spec fork "%s" is unknown', self.spec_fork)
 
         self.parsed_md_doc_paths = self.md_doc_paths.split()
 
         for filename in self.parsed_md_doc_paths:
             if not os.path.exists(filename):
-                raise Exception('Pyspec markdown input file "%s" does not exist.' % filename)
+                raise Exception(f'Pyspec markdown input file "{filename}" does not exist.')
 
         self.parsed_build_targets = []
         for target in self.build_targets.split():
             target = target.strip()
             data = target.split(':')
             if len(data) != 3:
-                raise Exception('invalid target, expected "name:preset_dir:config_file" format, but got: %s' % target)
+                raise Exception(
+                    f'invalid target, expected "name:preset_dir:config_file" format, but got: {target}'
+                )
             name, preset_dir_path, config_path = data
             if any((c not in string.digits + string.ascii_letters) for c in name):
-                raise Exception('invalid target name: "%s"' % name)
+                raise Exception(f'invalid target name: "{name}"')
             if not os.path.exists(preset_dir_path):
-                raise Exception('Preset dir "%s" does not exist' % preset_dir_path)
+                raise Exception(f'Preset dir "{preset_dir_path}" does not exist')
             _, _, preset_file_names = next(os.walk(preset_dir_path))
             preset_paths = [(Path(preset_dir_path) / name) for name in preset_file_names]
 
             if not os.path.exists(config_path):
-                raise Exception('Config file "%s" does not exist' % config_path)
+                raise Exception(f'Config file "{config_path}" does not exist')
             self.parsed_build_targets.append(BuildTarget(name, preset_paths, Path(config_path)))
 
     def run(self):
@@ -1164,7 +1175,7 @@ class PySpecCommand(Command):
                               f' out dir: "{self.out_dir}", spec fork: "{self.spec_fork}", build target: "{name}"')
                 self.debug_print(spec_str)
             else:
-                with open(os.path.join(self.out_dir, name+'.py'), 'w') as out:
+                with open(os.path.join(self.out_dir, f'{name}.py'), 'w') as out:
                     out.write(spec_str)
 
         if not self.dry_run:

@@ -25,14 +25,17 @@ def tick_and_add_block(spec, store, signed_block, test_steps, valid=True,
         time = pre_state.genesis_time + (spec.get_current_slot(store) + 1) * spec.config.SECONDS_PER_SLOT
         on_tick_and_append_step(spec, store, time, test_steps)
 
-    post_state = yield from add_block(
-        spec, store, signed_block, test_steps,
-        valid=valid,
-        block_not_found=block_not_found,
-        is_optimistic=is_optimistic,
+    return (
+        yield from add_block(
+            spec,
+            store,
+            signed_block,
+            test_steps,
+            valid=valid,
+            block_not_found=block_not_found,
+            is_optimistic=is_optimistic,
+        )
     )
-
-    return post_state
 
 
 def add_attestation(spec, store, attestation, test_steps, is_from_block=False):
@@ -125,30 +128,29 @@ def add_block(spec,
     """
     yield get_block_file_name(signed_block), signed_block
 
-    if not valid:
-        if is_optimistic:
+    if valid:
+        run_on_block(spec, store, signed_block, valid=True)
+        test_steps.append({'block': get_block_file_name(signed_block)})
+
+    elif is_optimistic:
+        run_on_block(spec, store, signed_block, valid=True)
+        test_steps.append({
+            'block': get_block_file_name(signed_block),
+            'valid': False,
+        })
+    else:
+        try:
             run_on_block(spec, store, signed_block, valid=True)
+        except (AssertionError, BlockNotFoundException) as e:
+            if isinstance(e, BlockNotFoundException) and not block_not_found:
+                assert False
             test_steps.append({
                 'block': get_block_file_name(signed_block),
                 'valid': False,
             })
+            return
         else:
-            try:
-                run_on_block(spec, store, signed_block, valid=True)
-            except (AssertionError, BlockNotFoundException) as e:
-                if isinstance(e, BlockNotFoundException) and not block_not_found:
-                    assert False
-                test_steps.append({
-                    'block': get_block_file_name(signed_block),
-                    'valid': False,
-                })
-                return
-            else:
-                assert False
-    else:
-        run_on_block(spec, store, signed_block, valid=True)
-        test_steps.append({'block': get_block_file_name(signed_block)})
-
+            assert False
     # An on_block step implies receiving block's attestations
     for attestation in signed_block.message.body.attestations:
         run_on_attestation(spec, store, attestation, is_from_block=True, valid=True)

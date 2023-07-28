@@ -131,8 +131,8 @@ def run_sync_committee_processing(spec, state, block, expect_exception=False, sk
         assert pre_state.balances == state.balances
     else:
         committee_indices = compute_committee_indices(state, state.current_sync_committee)
-        committee_bits = block.body.sync_aggregate.sync_committee_bits
         if not skip_reward_validation:
+            committee_bits = block.body.sync_aggregate.sync_committee_bits
             validate_sync_committee_rewards(
                 spec,
                 pre_state,

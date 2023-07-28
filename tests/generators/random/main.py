@@ -3,21 +3,36 @@ from eth2spec.gen_helpers.gen_from_tests.gen import run_state_test_generators
 
 
 if __name__ == "__main__":
-    phase_0_mods = {key: 'eth2spec.test.phase0.random.test_' + key for key in [
-        'random',
-    ]}
-    altair_mods = {key: 'eth2spec.test.altair.random.test_' + key for key in [
-        'random',
-    ]}
-    bellatrix_mods = {key: 'eth2spec.test.bellatrix.random.test_' + key for key in [
-        'random',
-    ]}
-    capella_mods = {key: 'eth2spec.test.capella.random.test_' + key for key in [
-        'random',
-    ]}
-    deneb_mods = {key: 'eth2spec.test.deneb.random.test_' + key for key in [
-        'random',
-    ]}
+    phase_0_mods = {
+        key: f'eth2spec.test.phase0.random.test_{key}'
+        for key in [
+            'random',
+        ]
+    }
+    altair_mods = {
+        key: f'eth2spec.test.altair.random.test_{key}'
+        for key in [
+            'random',
+        ]
+    }
+    bellatrix_mods = {
+        key: f'eth2spec.test.bellatrix.random.test_{key}'
+        for key in [
+            'random',
+        ]
+    }
+    capella_mods = {
+        key: f'eth2spec.test.capella.random.test_{key}'
+        for key in [
+            'random',
+        ]
+    }
+    deneb_mods = {
+        key: f'eth2spec.test.deneb.random.test_{key}'
+        for key in [
+            'random',
+        ]
+    }
 
     all_mods = {
         PHASE0: phase_0_mods,

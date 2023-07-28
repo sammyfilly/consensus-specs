@@ -96,6 +96,8 @@ prepare_execution_payload_expected_results = [
 @with_phases([BELLATRIX])
 @spec_state_test
 def test_prepare_execution_payload(spec, state):
+    # Default `TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH` is too big and too close to overflow
+    _mock_terminal_block_hash_activation_epoch = 3
     for result in prepare_execution_payload_expected_results:
         (
             is_merge_complete,
@@ -119,8 +121,6 @@ def test_prepare_execution_payload(spec, state):
         else:
             config_overrides['TERMINAL_BLOCK_HASH'] = spec.Hash32()
 
-        # Default `TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH` is too big and too close to overflow
-        _mock_terminal_block_hash_activation_epoch = 3
         config_overrides['TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH'] = _mock_terminal_block_hash_activation_epoch
         if is_activation_epoch_reached:
             state.slot = _mock_terminal_block_hash_activation_epoch * spec.SLOTS_PER_EPOCH
@@ -149,7 +149,6 @@ def test_prepare_execution_payload(spec, state):
         safe_block_hash = b'\x58' * 32
         suggested_fee_recipient = b'\x78' * 20
 
-        # Mock execution_engine
         class TestEngine(spec.NoopExecutionEngine):
             def notify_forkchoice_updated(self,
                                           head_block_hash,

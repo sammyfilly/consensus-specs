@@ -43,10 +43,10 @@ def get_spec_for_fork_version(spec, fork_version, phases):
         if fork == PHASE0:
             fork_version_field = 'GENESIS_FORK_VERSION'
         else:
-            fork_version_field = fork.upper() + '_FORK_VERSION'
+            fork_version_field = f'{fork.upper()}_FORK_VERSION'
         if fork_version == getattr(spec.config, fork_version_field):
             return phases[fork]
-    raise ValueError("Unknown fork version %s" % fork_version)
+    raise ValueError(f"Unknown fork version {fork_version}")
 
 
 def needs_upgrade_to_capella(d_spec, s_spec):
@@ -160,13 +160,17 @@ def setup_test(spec, state, s_spec=None, phases=None):
         s_spec = spec
     test.s_spec = s_spec
 
-    yield "genesis_validators_root", "meta", "0x" + state.genesis_validators_root.hex()
+    yield (
+        "genesis_validators_root",
+        "meta",
+        f"0x{state.genesis_validators_root.hex()}",
+    )
     test.genesis_validators_root = state.genesis_validators_root
 
     next_slots(spec, state, spec.SLOTS_PER_EPOCH * 2 - 1)
     trusted_block = state_transition_with_full_block(spec, state, True, True)
     trusted_block_root = trusted_block.message.hash_tree_root()
-    yield "trusted_block_root", "meta", "0x" + trusted_block_root.hex()
+    yield ("trusted_block_root", "meta", f"0x{trusted_block_root.hex()}")
 
     data_fork_version = spec.compute_fork_version(spec.compute_epoch_at_slot(trusted_block.message.slot))
     data_fork_digest = spec.compute_fork_digest(data_fork_version, test.genesis_validators_root)
@@ -189,14 +193,8 @@ def finish_test(test):
 
 
 def get_update_file_name(d_spec, update):
-    if d_spec.is_sync_committee_update(update):
-        suffix1 = "s"
-    else:
-        suffix1 = "x"
-    if d_spec.is_finality_update(update):
-        suffix2 = "f"
-    else:
-        suffix2 = "x"
+    suffix1 = "s" if d_spec.is_sync_committee_update(update) else "x"
+    suffix2 = "f" if d_spec.is_finality_update(update) else "x"
     return f"update_{encode_hex(update.attested_header.beacon.hash_tree_root())}_{suffix1}{suffix2}"
 
 
@@ -637,7 +635,7 @@ def run_test_single_fork(spec, phases, state, fork):
     assert test.store.optimistic_header.beacon.slot == attested_state.slot
 
     # Jump to two slots before fork
-    fork_epoch = getattr(phases[fork].config, fork.upper() + '_FORK_EPOCH')
+    fork_epoch = getattr(phases[fork].config, f'{fork.upper()}_FORK_EPOCH')
     transition_to(spec, state, spec.compute_start_slot_at_epoch(fork_epoch) - 4)
     attested_block = state_transition_with_full_block(spec, state, True, True)
     attested_state = state.copy()
@@ -752,14 +750,14 @@ def run_test_multi_fork(spec, phases, state, fork_1, fork_2):
     finalized_state = state.copy()
 
     # ..., attested is from `fork_1`, ...
-    fork_1_epoch = getattr(phases[fork_1].config, fork_1.upper() + '_FORK_EPOCH')
+    fork_1_epoch = getattr(phases[fork_1].config, f'{fork_1.upper()}_FORK_EPOCH')
     transition_to(spec, state, spec.compute_start_slot_at_epoch(fork_1_epoch) - 1)
     state, attested_block = do_fork(state, spec, phases[fork_1], fork_1_epoch)
     spec = phases[fork_1]
     attested_state = state.copy()
 
     # ..., and signature is from `fork_2`
-    fork_2_epoch = getattr(phases[fork_2].config, fork_2.upper() + '_FORK_EPOCH')
+    fork_2_epoch = getattr(phases[fork_2].config, f'{fork_2.upper()}_FORK_EPOCH')
     transition_to(spec, state, spec.compute_start_slot_at_epoch(fork_2_epoch) - 1)
     sync_aggregate, _ = get_sync_aggregate(phases[fork_2], state)
     state, block = do_fork(state, spec, phases[fork_2], fork_2_epoch, sync_aggregate=sync_aggregate)

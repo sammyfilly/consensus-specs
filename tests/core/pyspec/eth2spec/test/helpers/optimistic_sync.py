@@ -76,13 +76,10 @@ def get_optimistic_store(spec, anchor_state, anchor_block):
 
 
 def get_valid_flag_value(status: PayloadStatusV1Status) -> bool:
-    if status == PayloadStatusV1Status.VALID:
-        return True
-    elif status.alias == PayloadStatusV1StatusAlias.NOT_VALIDATED:
-        return True
-    else:
-        # status.alias == PayloadStatusV1StatusAlias.INVALIDATED or other cases
-        return False
+    return (
+        status == PayloadStatusV1Status.VALID
+        or status.alias == PayloadStatusV1StatusAlias.NOT_VALIDATED
+    )
 
 
 def add_optimistic_block(spec, mega_store, signed_block, test_steps,
@@ -118,7 +115,10 @@ def add_optimistic_block(spec, mega_store, signed_block, test_steps,
         # Update parent status to INVALID
         assert payload_status.latest_valid_hash is not None
         current_block = block
-        while el_block_hash != payload_status.latest_valid_hash and el_block_hash != spec.Bytes32():
+        while el_block_hash not in [
+            payload_status.latest_valid_hash,
+            spec.Bytes32(),
+        ]:
             current_block_root = current_block.hash_tree_root()
             assert current_block_root in mega_store.block_payload_statuses
             mega_store.block_payload_statuses[current_block_root].status = PayloadStatusV1Status.INVALID
@@ -131,13 +131,11 @@ def add_optimistic_block(spec, mega_store, signed_block, test_steps,
                          test_steps=test_steps,
                          is_optimistic=True)
 
-    # Update stores
-    is_optimistic_candidate = spec.is_optimistic_candidate_block(
+    if is_optimistic_candidate := spec.is_optimistic_candidate_block(
         mega_store.opt_store,
         current_slot=spec.get_current_slot(mega_store.fc_store),
         block=signed_block.message,
-    )
-    if is_optimistic_candidate:
+    ):
         mega_store.opt_store.optimistic_roots.add(block_root)
         mega_store.opt_store.blocks[block_root] = signed_block.message.copy()
         if not is_invalidated(mega_store, block_root):
@@ -166,18 +164,19 @@ def get_opt_head_block_root(spec, mega_store):
     # Execute the LMD-GHOST fork choice
     head = store.justified_checkpoint.root
     while True:
-        children = [
-            root for root in blocks.keys()
+        if children := [
+            root
+            for root in blocks.keys()
             if (
                 blocks[root].parent_root == head
                 and not is_invalidated(mega_store, root)  # For optimistic sync
             )
-        ]
-        if len(children) == 0:
+        ]:
+            # Sort by latest attesting balance with ties broken lexicographically
+            # Ties broken by favoring block with lexicographically higher root
+            head = max(children, key=lambda root: (spec.get_weight(store, root), root))
+        else:
             return head
-        # Sort by latest attesting balance with ties broken lexicographically
-        # Ties broken by favoring block with lexicographically higher root
-        head = max(children, key=lambda root: (spec.get_weight(store, root), root))
 
 
 def is_invalidated(mega_store, block_root):

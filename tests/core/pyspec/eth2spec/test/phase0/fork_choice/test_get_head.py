@@ -40,7 +40,6 @@ rng = random.Random(1001)
 @with_altair_and_later
 @spec_state_test
 def test_genesis(spec, state):
-    test_steps = []
     # Initialization
     store, anchor_block = get_genesis_forkchoice_store_and_block(spec, state)
     yield 'anchor_state', state
@@ -48,13 +47,14 @@ def test_genesis(spec, state):
 
     anchor_root = get_anchor_root(spec, state)
     assert spec.get_head(store) == anchor_root
-    test_steps.append({
-        'checks': {
-            'genesis_time': int(store.genesis_time),
-            'head': get_formatted_head_output(spec, store),
+    test_steps = [
+        {
+            'checks': {
+                'genesis_time': int(store.genesis_time),
+                'head': get_formatted_head_output(spec, store),
+            }
         }
-    })
-
+    ]
     yield 'steps', test_steps
 
     if is_post_altair(spec):

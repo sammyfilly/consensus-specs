@@ -216,7 +216,7 @@ def _run_sync_committee_selected_twice(
 
     # Find duplicate indices that get selected twice
     dup = {v for v in committee_indices if committee_indices.count(v) == 2}
-    assert len(dup) > 0
+    assert dup
     validator_index = dup.pop()
     positions = [i for i, v in enumerate(committee_indices) if v == validator_index]
     committee_bits[positions[0]] = participate_first_position

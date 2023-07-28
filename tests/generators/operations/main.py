@@ -3,49 +3,69 @@ from eth2spec.test.helpers.constants import PHASE0, ALTAIR, BELLATRIX, CAPELLA, 
 
 
 if __name__ == "__main__":
-    phase_0_mods = {key: 'eth2spec.test.phase0.block_processing.test_process_' + key for key in [
-        'attestation',
-        'attester_slashing',
-        'block_header',
-        'deposit',
-        'proposer_slashing',
-        'voluntary_exit',
-    ]}
-    _new_altair_mods = {
-        **{'sync_aggregate': [
-            'eth2spec.test.altair.block_processing.sync_aggregate.test_process_' + key
-            for key in ['sync_aggregate', 'sync_aggregate_random']
-        ]},
-        **{key: 'eth2spec.test.altair.block_processing.test_process_' + key for key in [
+    phase_0_mods = {
+        key: f'eth2spec.test.phase0.block_processing.test_process_{key}'
+        for key in [
+            'attestation',
+            'attester_slashing',
+            'block_header',
             'deposit',
-        ]}
+            'proposer_slashing',
+            'voluntary_exit',
+        ]
+    }
+    _new_altair_mods = {
+        **{
+            'sync_aggregate': [
+                f'eth2spec.test.altair.block_processing.sync_aggregate.test_process_{key}'
+                for key in ['sync_aggregate', 'sync_aggregate_random']
+            ]
+        },
+        **{
+            key: f'eth2spec.test.altair.block_processing.test_process_{key}'
+            for key in [
+                'deposit',
+            ]
+        },
     }
     altair_mods = combine_mods(_new_altair_mods, phase_0_mods)
 
-    _new_bellatrix_mods = {key: 'eth2spec.test.bellatrix.block_processing.test_process_' + key for key in [
-        'deposit',
-        'execution_payload',
-        'voluntary_exit',
-    ]}
+    _new_bellatrix_mods = {
+        key: f'eth2spec.test.bellatrix.block_processing.test_process_{key}'
+        for key in [
+            'deposit',
+            'execution_payload',
+            'voluntary_exit',
+        ]
+    }
     bellatrix_mods = combine_mods(_new_bellatrix_mods, altair_mods)
 
-    _new_capella_mods = {key: 'eth2spec.test.capella.block_processing.test_process_' + key for key in [
-        'bls_to_execution_change',
-        'deposit',
-        'execution_payload',
-        'withdrawals',
-    ]}
+    _new_capella_mods = {
+        key: f'eth2spec.test.capella.block_processing.test_process_{key}'
+        for key in [
+            'bls_to_execution_change',
+            'deposit',
+            'execution_payload',
+            'withdrawals',
+        ]
+    }
     capella_mods = combine_mods(_new_capella_mods, bellatrix_mods)
 
-    _new_deneb_mods = {key: 'eth2spec.test.deneb.block_processing.test_process_' + key for key in [
-        'execution_payload',
-        'voluntary_exit',
-    ]}
+    _new_deneb_mods = {
+        key: f'eth2spec.test.deneb.block_processing.test_process_{key}'
+        for key in [
+            'execution_payload',
+            'voluntary_exit',
+        ]
+    }
     deneb_mods = combine_mods(_new_deneb_mods, capella_mods)
 
-    _new_eip6110_mods = {key: 'eth2spec.test.eip6110.block_processing.test_process_' + key for key in [
-        'deposit_receipt',
-    ]}
+    _new_eip6110_mods = {
+        key: f'eth2spec.test.eip6110.block_processing.test_process_{key}'
+        for key in [
+            'deposit_receipt',
+        ]
+    }
     eip6110_mods = combine_mods(_new_eip6110_mods, deneb_mods)
 
     # TODO Custody Game testgen is disabled for now

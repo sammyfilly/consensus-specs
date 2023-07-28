@@ -42,7 +42,9 @@ def vector_test(description: str = None):
                         yield key, 'ssz', serialize(value)
                     elif isinstance(value, bytes):
                         yield key, 'ssz', value
-                    elif isinstance(value, list) and all([isinstance(el, (View, bytes)) for el in value]):
+                    elif isinstance(value, list) and all(
+                        isinstance(el, (View, bytes)) for el in value
+                    ):
                         for i, el in enumerate(value):
                             if isinstance(el, View):
                                 yield f'{key}_{i}', 'ssz', serialize(el)
@@ -55,19 +57,16 @@ def vector_test(description: str = None):
                         #  something that should be encodable by the generator runner.
                         yield key, 'data', value
 
-            # check generator mode, may be None/else.
-            # "pop" removes it, so it is not passed to the inner function.
             if kw.pop('generator_mode', False) is True:
                 # return the yielding function as a generator object.
                 # Don't yield in this function itself, that would make pytest skip over it.
                 return generator_mode()
-            else:
-                # Just complete the function, ignore all yielded data,
-                # we are not using it (or processing it, i.e. nearly zero efficiency loss)
-                # Pytest does not support yielded data in the outer function, so we need to wrap it like this.
-                for _ in fn(*args, **kw):
-                    continue
-                return None
+            # Just complete the function, ignore all yielded data,
+            # we are not using it (or processing it, i.e. nearly zero efficiency loss)
+            # Pytest does not support yielded data in the outer function, so we need to wrap it like this.
+            for _ in fn(*args, **kw):
+                continue
+            return None
 
         return entry
 

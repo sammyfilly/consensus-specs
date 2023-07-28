@@ -418,7 +418,7 @@ def test_top_up_to_fully_withdrawn_validator(spec, state):
 
 
 def _insert_validator(spec, state, balance):
-    effective_balance = balance if balance < spec.MAX_EFFECTIVE_BALANCE else spec.MAX_EFFECTIVE_BALANCE
+    effective_balance = min(balance, spec.MAX_EFFECTIVE_BALANCE)
     validator_index = len(state.validators)
     validator = spec.Validator(
         pubkey=pubkeys[validator_index],
@@ -447,12 +447,10 @@ def _run_activate_and_partial_withdrawal(spec, state, initial_balance):
 
     yield 'pre', state
 
-    blocks = []
     # To activate
     block = build_empty_block_for_next_slot(spec, state)
     signed_block = state_transition_and_sign_block(spec, state, block)
-    blocks.append(signed_block)
-
+    blocks = [signed_block]
     assert spec.is_active_validator(state.validators[validator_index], spec.get_current_epoch(state))
 
     if initial_balance > spec.MAX_EFFECTIVE_BALANCE:

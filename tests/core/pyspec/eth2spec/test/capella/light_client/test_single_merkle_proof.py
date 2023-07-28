@@ -17,11 +17,14 @@ def test_execution_merkle_proof(spec, state):
     yield "object", block.message.body
     execution_branch = spec.compute_merkle_proof_for_block_body(
         block.message.body, spec.EXECUTION_PAYLOAD_INDEX)
-    yield "proof", {
-        "leaf": "0x" + block.message.body.execution_payload.hash_tree_root().hex(),
-        "leaf_index": spec.EXECUTION_PAYLOAD_INDEX,
-        "branch": ['0x' + root.hex() for root in execution_branch]
-    }
+    yield (
+        "proof",
+        {
+            "leaf": f"0x{block.message.body.execution_payload.hash_tree_root().hex()}",
+            "leaf_index": spec.EXECUTION_PAYLOAD_INDEX,
+            "branch": [f'0x{root.hex()}' for root in execution_branch],
+        },
+    )
     assert spec.is_valid_merkle_branch(
         leaf=block.message.body.execution_payload.hash_tree_root(),
         branch=execution_branch,

@@ -38,9 +38,9 @@ def get_valid_custody_key_reveal(spec, state, period=None, validator_index=None)
     current_epoch = spec.get_current_epoch(state)
     revealer_index = (spec.get_active_validator_indices(state, current_epoch)[0]
                       if validator_index is None else validator_index)
-    revealer = state.validators[revealer_index]
-
     if period is None:
+        revealer = state.validators[revealer_index]
+
         period = revealer.next_custody_secret_to_reveal
 
     epoch_to_sign = spec.get_randao_epoch_for_custody_period(period, revealer_index)
@@ -80,12 +80,10 @@ def get_valid_custody_slashing(spec, state, attestation, shard_transition, custo
     slashing_domain = spec.get_domain(state, spec.DOMAIN_CUSTODY_BIT_SLASHING)
     slashing_root = spec.compute_signing_root(slashing, slashing_domain)
 
-    signed_slashing = spec.SignedCustodySlashing(
+    return spec.SignedCustodySlashing(
         message=slashing,
-        signature=bls.Sign(privkeys[whistleblower_index], slashing_root)
+        signature=bls.Sign(privkeys[whistleblower_index], slashing_root),
     )
-
-    return signed_slashing
 
 
 def get_valid_chunk_challenge(spec, state, attestation, shard_transition, data_index=None, chunk_index=None):
@@ -149,14 +147,13 @@ def get_custody_test_vector(bytelength, offset=0):
 def get_sample_shard_transition(spec, start_slot, block_lengths):
     b = [spec.hash_tree_root(ByteList[spec.MAX_SHARD_BLOCK_SIZE](get_custody_test_vector(x)))
          for x in block_lengths]
-    shard_transition = spec.ShardTransition(
+    return spec.ShardTransition(
         start_slot=start_slot,
         shard_block_lengths=block_lengths,
         shard_data_roots=b,
-        shard_states=[spec.ShardState() for x in block_lengths],
+        shard_states=[spec.ShardState() for _ in block_lengths],
         proposer_signature_aggregate=spec.BLSSignature(),
     )
-    return shard_transition
 
 
 def get_custody_slashable_test_vector(spec, custody_secret, length, slashable=True):

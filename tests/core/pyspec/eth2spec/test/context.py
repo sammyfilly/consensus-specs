@@ -106,9 +106,11 @@ def _prepare_state(balances_fn: Callable[[Any], Sequence[int]], threshold_fn: Ca
                    spec: Spec, phases: SpecForks):
     balances = balances_fn(spec)
     activation_threshold = threshold_fn(spec)
-    state = create_genesis_state(spec=spec, validator_balances=balances,
-                                 activation_threshold=activation_threshold)
-    return state
+    return create_genesis_state(
+        spec=spec,
+        validator_balances=balances,
+        activation_threshold=activation_threshold,
+    )
 
 
 _custom_state_cache_dict = LRU(size=10)
@@ -293,7 +295,7 @@ def spec_configured_state_test(conf):
 
 
 def _check_current_version(spec, state, version_name):
-    fork_version_field = version_name.upper() + '_FORK_VERSION'
+    fork_version_field = f'{version_name.upper()}_FORK_VERSION'
     try:
         fork_version = getattr(spec.config, fork_version_field)
     except Exception:
@@ -308,11 +310,11 @@ def config_fork_epoch_overrides(spec, state):
 
     for fork in ALL_PHASES:
         if fork != PHASE0 and _check_current_version(spec, state, fork):
-            overrides = {}
-            for f in ALL_PHASES:
-                if f != PHASE0 and is_post_fork(fork, f):
-                    overrides[f.upper() + '_FORK_EPOCH'] = spec.GENESIS_EPOCH
-            return overrides
+            return {
+                f'{f.upper()}_FORK_EPOCH': spec.GENESIS_EPOCH
+                for f in ALL_PHASES
+                if f != PHASE0 and is_post_fork(fork, f)
+            }
 
 
 def with_matching_spec_config(emitted_fork=None):
@@ -440,18 +442,16 @@ def _get_run_phases(phases, kw):
     """
     Return the fork names for the base `spec` in test cases
     """
-    if 'phase' in kw:
-        # Limit phases if one explicitly specified
-        phase = kw.pop('phase')
-        if phase not in phases:
-            dump_skipping_message(f"doesn't support this fork: {phase}")
-            return None
-        run_phases = [phase]
-    else:
+    if 'phase' not in kw:
         # If pytest `--fork` flag is set, filter out the rest of the forks
-        run_phases = set(phases).intersection(DEFAULT_PYTEST_FORKS)
+        return set(phases).intersection(DEFAULT_PYTEST_FORKS)
 
-    return run_phases
+    # Limit phases if one explicitly specified
+    phase = kw.pop('phase')
+    if phase not in phases:
+        dump_skipping_message(f"doesn't support this fork: {phase}")
+        return None
+    return [phase]
 
 
 def _get_available_phases(run_phases, other_phases):
@@ -476,11 +476,7 @@ def _run_test_case_with_phases(fn, phases, other_phases, kw, args, is_fork_trans
 
     targets = _get_preset_targets(kw)
 
-    # Populate all phases for multi-phase tests
-    phase_dir = {}
-    for phase in available_phases:
-        phase_dir[phase] = targets[phase]
-
+    phase_dir = {phase: targets[phase] for phase in available_phases}
     # Return is ignored whenever multiple phases are ran.
     # This return is for test generators to emit python generators (yielding test vector outputs)
     for phase in run_phases:

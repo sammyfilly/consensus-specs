@@ -152,7 +152,7 @@ def run_generator(generator_name, test_providers: Iterable[TestProvider]):
     """
 
     parser = argparse.ArgumentParser(
-        prog="gen-" + generator_name,
+        prog=f"gen-{generator_name}",
         description=f"Generate YAML test suite files for {generator_name}",
     )
     parser.add_argument(
@@ -189,11 +189,7 @@ def run_generator(generator_name, test_providers: Iterable[TestProvider]):
 
     args = parser.parse_args()
     output_dir = args.output_dir
-    if not args.force:
-        file_mode = "x"
-    else:
-        file_mode = "w"
-
+    file_mode = "x" if not args.force else "w"
     log_file = Path(output_dir) / 'testgen_error_log.txt'
 
     print(f"Generating tests into {output_dir}")
@@ -299,15 +295,13 @@ def generate_test_vector(test_case, case_dir, log_file, file_mode):
 
     result = None
     try:
-        meta = dict()
+        meta = {}
         try:
             written_part, meta = execute_test(test_case, case_dir, meta, log_file, file_mode, cfg_yaml, yaml)
         except SkippedTest as e:
-            result = 0  # 0 means skipped
             print(e)
             shutil.rmtree(case_dir)
-            return result
-
+            return 0
         # Once all meta data is collected (if any), write it to a meta data file.
         if len(meta) != 0:
             written_part = True
@@ -355,10 +349,11 @@ def write_result_into_diagnostics_obj(result, diagnostics_obj):
 
 def dump_yaml_fn(data: Any, name: str, file_mode: str, yaml_encoder: YAML):
     def dump(case_path: Path):
-        out_path = case_path / Path(name + '.yaml')
+        out_path = case_path / Path(f'{name}.yaml')
         with out_path.open(file_mode) as f:
             yaml_encoder.dump(data, f)
             f.close()
+
     return dump
 
 
@@ -392,15 +387,16 @@ def execute_test(test_case, case_dir, meta, log_file, file_mode, cfg_yaml, yaml)
         elif out_kind == "ssz":
             output_part(case_dir, log_file, out_kind, name, dump_ssz_fn(data, name, file_mode))
         else:
-            raise ValueError("Unknown out_kind %s" % out_kind)
+            raise ValueError(f"Unknown out_kind {out_kind}")
 
     return written_part, meta
 
 
 def dump_ssz_fn(data: AnyStr, name: str, file_mode: str):
     def dump(case_path: Path):
-        out_path = case_path / Path(name + '.ssz_snappy')
+        out_path = case_path / Path(f'{name}.ssz_snappy')
         compressed = compress(data)
-        with out_path.open(file_mode + 'b') as f:  # write in raw binary mode
+        with out_path.open(f'{file_mode}b') as f:  # write in raw binary mode
             f.write(compressed)
+
     return dump

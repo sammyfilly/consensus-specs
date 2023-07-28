@@ -16,7 +16,7 @@ def test_slots_1(spec, state):
     yield 'pre', state
 
     slots = 1
-    yield 'slots', int(slots)
+    yield ('slots', slots)
     spec.process_slots(state, state.slot + slots)
 
     yield 'post', state
@@ -29,7 +29,7 @@ def test_slots_1(spec, state):
 def test_slots_2(spec, state):
     yield 'pre', state
     slots = 2
-    yield 'slots', int(slots)
+    yield ('slots', slots)
     spec.process_slots(state, state.slot + slots)
     yield 'post', state
 

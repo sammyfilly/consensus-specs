@@ -15,17 +15,18 @@ def build_mock_validator(spec, i: int, balance: int):
     withdrawal_pubkey = pubkeys[-1 - i]
     # insecurely use pubkey as withdrawal key as well
     withdrawal_credentials = spec.BLS_WITHDRAWAL_PREFIX + spec.hash(withdrawal_pubkey)[1:]
-    validator = spec.Validator(
+    return spec.Validator(
         pubkey=active_pubkey,
         withdrawal_credentials=withdrawal_credentials,
         activation_eligibility_epoch=spec.FAR_FUTURE_EPOCH,
         activation_epoch=spec.FAR_FUTURE_EPOCH,
         exit_epoch=spec.FAR_FUTURE_EPOCH,
         withdrawable_epoch=spec.FAR_FUTURE_EPOCH,
-        effective_balance=min(balance - balance % spec.EFFECTIVE_BALANCE_INCREMENT, spec.MAX_EFFECTIVE_BALANCE)
+        effective_balance=min(
+            balance - balance % spec.EFFECTIVE_BALANCE_INCREMENT,
+            spec.MAX_EFFECTIVE_BALANCE,
+        ),
     )
-
-    return validator
 
 
 def get_sample_genesis_execution_payload_header(spec,

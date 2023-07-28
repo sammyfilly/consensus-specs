@@ -88,7 +88,7 @@ def run_withdrawals_processing(spec, state, execution_payload, num_expected_with
     elif len(expected_withdrawals) <= spec.MAX_WITHDRAWALS_PER_PAYLOAD:
         bound = min(spec.MAX_VALIDATORS_PER_WITHDRAWALS_SWEEP, spec.MAX_WITHDRAWALS_PER_PAYLOAD)
         assert len(spec.get_expected_withdrawals(state)) <= bound
-    elif len(expected_withdrawals) > spec.MAX_WITHDRAWALS_PER_PAYLOAD:
+    else:
         raise ValueError('len(expected_withdrawals) should not be greater than MAX_WITHDRAWALS_PER_PAYLOAD')
 
     if fully_withdrawable_indices is not None or partial_withdrawals_indices is not None:

@@ -27,8 +27,7 @@ def generate_setup(generator: Optimized_Point3D, secret: int, length: int) -> Tu
     Generate trusted setup of ``generator`` in ``length``.
     """
     result = [generator]
-    for _ in range(1, length):
-        result.append(bls.multiply(result[-1], secret))
+    result.extend(bls.multiply(result[-1], secret) for _ in range(1, length))
     return tuple(result)
 
 
@@ -61,7 +60,7 @@ def compute_roots_of_unity(field_elements_per_blob: int) -> Tuple[int]:
     Compute a list of roots of unity for a given order.
     The order must divide the BLS multiplicative group order, i.e. BLS_MODULUS - 1
     """
-    field_elements_per_blob = int(field_elements_per_blob)  # to non-SSZ int
+    field_elements_per_blob = field_elements_per_blob
     assert (BLS_MODULUS - 1) % field_elements_per_blob == 0
     root_of_unity = compute_root_of_unity(length=field_elements_per_blob)
 

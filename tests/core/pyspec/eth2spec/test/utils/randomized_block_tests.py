@@ -58,8 +58,7 @@ def _randomize_deposit_state(spec, state, stats):
 
 def randomize_state(spec, state, stats, exit_fraction=0.1, slash_fraction=0.1):
     randomize_state_helper(spec, state, exit_fraction=exit_fraction, slash_fraction=slash_fraction)
-    scenario_state = _randomize_deposit_state(spec, state, stats)
-    return scenario_state
+    return _randomize_deposit_state(spec, state, stats)
 
 
 def randomize_state_altair(spec, state, stats, exit_fraction=0.1, slash_fraction=0.1):
@@ -69,33 +68,33 @@ def randomize_state_altair(spec, state, stats, exit_fraction=0.1, slash_fraction
 
 
 def randomize_state_bellatrix(spec, state, stats, exit_fraction=0.1, slash_fraction=0.1):
-    scenario_state = randomize_state_altair(spec,
-                                            state,
-                                            stats,
-                                            exit_fraction=exit_fraction,
-                                            slash_fraction=slash_fraction)
-    # TODO: randomize execution payload, merge status, etc.
-    return scenario_state
+    return randomize_state_altair(
+        spec,
+        state,
+        stats,
+        exit_fraction=exit_fraction,
+        slash_fraction=slash_fraction,
+    )
 
 
 def randomize_state_capella(spec, state, stats, exit_fraction=0.1, slash_fraction=0.1):
-    scenario_state = randomize_state_bellatrix(spec,
-                                               state,
-                                               stats,
-                                               exit_fraction=exit_fraction,
-                                               slash_fraction=slash_fraction)
-    # TODO: randomize withdrawals
-    return scenario_state
+    return randomize_state_bellatrix(
+        spec,
+        state,
+        stats,
+        exit_fraction=exit_fraction,
+        slash_fraction=slash_fraction,
+    )
 
 
 def randomize_state_deneb(spec, state, stats, exit_fraction=0.1, slash_fraction=0.1):
-    scenario_state = randomize_state_capella(spec,
-                                             state,
-                                             stats,
-                                             exit_fraction=exit_fraction,
-                                             slash_fraction=slash_fraction)
-    # TODO: randomize execution payload
-    return scenario_state
+    return randomize_state_capella(
+        spec,
+        state,
+        stats,
+        exit_fraction=exit_fraction,
+        slash_fraction=slash_fraction,
+    )
 
 
 # epochs
@@ -217,9 +216,9 @@ def random_block_altair_with_cycling_sync_committee_participation(spec,
 
 
 def random_block_bellatrix(spec, state, signed_blocks, scenario_state):
-    block = random_block_altair_with_cycling_sync_committee_participation(spec, state, signed_blocks, scenario_state)
-    # TODO: return randomized execution payload
-    return block
+    return random_block_altair_with_cycling_sync_committee_participation(
+        spec, state, signed_blocks, scenario_state
+    )
 
 
 def random_block_capella(spec, state, signed_blocks, scenario_state, rng=Random(3456)):
@@ -359,9 +358,7 @@ _this_module = sys.modules[__name__]
 
 
 def _resolve_ref(ref):
-    if isinstance(ref, str):
-        return getattr(_this_module, ref)
-    return ref
+    return getattr(_this_module, ref) if isinstance(ref, str) else ref
 
 
 def _iter_temporal(spec, description):
@@ -373,8 +370,7 @@ def _iter_temporal(spec, description):
     numeric = _resolve_ref(description)
     if isinstance(numeric, Callable):
         numeric = numeric(spec)
-    for i in range(numeric):
-        yield i
+    yield from range(numeric)
 
 
 def _compute_statistics(scenario):
@@ -399,7 +395,7 @@ def run_generated_randomized_test(spec, state, scenario):
         additional_state = mutation(spec, state, stats)
         validation(spec, state)
         if additional_state:
-            scenario_state.update(additional_state)
+            scenario_state |= additional_state
 
     yield "pre", state
 
@@ -413,8 +409,7 @@ def run_generated_randomized_test(spec, state, scenario):
             next_slot(spec, state)
 
         block_producer = _resolve_ref(transition["block_producer"])
-        block = block_producer(spec, state, blocks, scenario_state)
-        if block:
+        if block := block_producer(spec, state, blocks, scenario_state):
             signed_block = state_transition_and_sign_block(spec, state, block)
             blocks.append(signed_block)
 

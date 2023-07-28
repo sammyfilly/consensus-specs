@@ -4,19 +4,25 @@ from eth2spec.test.helpers.constants import ALTAIR, BELLATRIX, CAPELLA, DENEB, E
 
 if __name__ == "__main__":
     # Note: Fork choice tests start from Altair - there are no fork choice test for phase 0 anymore
-    altair_mods = {key: 'eth2spec.test.phase0.fork_choice.test_' + key for key in [
-        'get_head',
-        'on_block',
-        'ex_ante',
-        'reorg',
-        'withholding',
-    ]}
+    altair_mods = {
+        key: f'eth2spec.test.phase0.fork_choice.test_{key}'
+        for key in [
+            'get_head',
+            'on_block',
+            'ex_ante',
+            'reorg',
+            'withholding',
+        ]
+    }
 
     # For merge `on_merge_block` test kind added with `pow_block_N.ssz` files with several
     # PowBlock's which should be resolved by `get_pow_block(hash: Hash32) -> PowBlock` function
-    _new_bellatrix_mods = {key: 'eth2spec.test.bellatrix.fork_choice.test_' + key for key in [
-        'on_merge_block',
-    ]}
+    _new_bellatrix_mods = {
+        key: f'eth2spec.test.bellatrix.fork_choice.test_{key}'
+        for key in [
+            'on_merge_block',
+        ]
+    }
     bellatrix_mods = combine_mods(_new_bellatrix_mods, altair_mods)
     capella_mods = bellatrix_mods  # No additional Capella specific fork choice tests
     deneb_mods = capella_mods  # No additional Deneb specific fork choice tests

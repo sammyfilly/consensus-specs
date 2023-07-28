@@ -81,15 +81,10 @@ def test_simple_attempted_reorg_without_enough_ffg_votes(spec, state):
     next_slot(spec, state)
     state_a = state.copy()
 
-    # to test the "no withholding" situation, temporarily store the blocks in lists
-    signed_blocks_of_y = []
-    signed_blocks_of_z = []
-
     # add an empty block on chain y
     block_y = build_empty_block_for_next_slot(spec, state)
     signed_block_y = state_transition_and_sign_block(spec, state, block_y)
-    signed_blocks_of_y.append(signed_block_y)
-
+    signed_blocks_of_y = [signed_block_y]
     # chain y has some on-chain attestations, but not enough to justify c4
     signed_block_y = state_transition_with_full_block(spec, state, True, True)
     assert not is_ready_to_justify(spec, state)
@@ -103,8 +98,7 @@ def test_simple_attempted_reorg_without_enough_ffg_votes(spec, state):
     block_z = build_empty_block_for_next_slot(spec, state)
     block_z.body.attestations = [attestation]
     signed_block_z = state_transition_and_sign_block(spec, state, block_z)
-    signed_blocks_of_z.append(signed_block_z)
-
+    signed_blocks_of_z = [signed_block_z]
     # add an empty block on chain z
     block_z = build_empty_block_for_next_slot(spec, state)
     signed_block_z = state_transition_and_sign_block(spec, state, block_z)
@@ -334,11 +328,9 @@ def _run_include_votes_of_another_empty_chain(spec, state, enough_ffg, is_justif
 
     signed_block_y = signed_blocks_of_empty_chain[-1]
 
-    # create 2/3 votes for the empty chain
-    attestations_for_y = []
     # target_is_current = not is_justifying_previous_epoch
     attestations = list(get_valid_attestation_at_slot(state, spec, state_a.slot))
-    attestations_for_y.append(attestations)
+    attestations_for_y = [attestations]
     for state in states_of_empty_chain:
         attestations = list(get_valid_attestation_at_slot(state, spec, state.slot))
         attestations_for_y.append(attestations)
@@ -348,18 +340,16 @@ def _run_include_votes_of_another_empty_chain(spec, state, enough_ffg, is_justif
 
     for slot in range(state_a.slot + 1, last_slot_of_z + 1):
         # apply chain y, the empty chain
-        if slot <= last_slot_of_y and len(signed_blocks_of_y) > 0:
+        if slot <= last_slot_of_y and signed_blocks_of_y:
             signed_block_y = signed_blocks_of_y.pop(0)
             assert signed_block_y.message.slot == slot
             yield from tick_and_add_block(spec, store, signed_block_y, test_steps)
 
         # apply chain z, a fork chain that includes these attestations_for_y
         block = build_empty_block(spec, state, slot=slot)
-        if (
-            len(attestations_for_y) > 0 and (
-                (not is_justifying_previous_epoch)
-                or (is_justifying_previous_epoch and attestations_for_y[0][0].data.slot == slot - 5)
-            )
+        if attestations_for_y and (
+            not is_justifying_previous_epoch
+            or attestations_for_y[0][0].data.slot == slot - 5
         ):
             block.body.attestations = attestations_for_y.pop(0)
         signed_block_z = state_transition_and_sign_block(spec, state, block)

@@ -36,7 +36,6 @@ def test_from_syncing_to_invalid(spec, state):
     fc_store, anchor_block = get_genesis_forkchoice_store_and_block(spec, state)
     op_store = get_optimistic_store(spec, state, anchor_block)
     mega_store = MegaStore(spec, fc_store, op_store)
-    block_hashes = {}
     yield 'anchor_state', state
     yield 'anchor_block', anchor_block
 
@@ -50,7 +49,7 @@ def test_from_syncing_to_invalid(spec, state):
 
     # Block 0
     block_0 = build_empty_block_for_next_slot(spec, state)
-    block_hashes['block_0'] = block_0.body.execution_payload.block_hash
+    block_hashes = {'block_0': block_0.body.execution_payload.block_hash}
     signed_block = state_transition_and_sign_block(spec, state, block_0)
     yield from add_optimistic_block(spec, mega_store, signed_block, test_steps, status=PayloadStatusV1Status.VALID)
     assert spec.get_head(mega_store.fc_store) == mega_store.opt_store.head_block_root

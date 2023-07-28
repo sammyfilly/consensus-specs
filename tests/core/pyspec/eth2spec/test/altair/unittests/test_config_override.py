@@ -48,7 +48,7 @@ def test_config_override_matching_fork_epochs(spec, state):
         if fork == PHASE0:
             fork_version_field = 'GENESIS_FORK_VERSION'
         else:
-            fork_version_field = fork.upper() + '_FORK_VERSION'
+            fork_version_field = f'{fork.upper()}_FORK_VERSION'
         if state.fork.current_version == getattr(spec.config, fork_version_field):
             state_fork = fork
             break
@@ -58,7 +58,7 @@ def test_config_override_matching_fork_epochs(spec, state):
     for fork in [fork for fork in ALL_PHASES if is_post_fork(state_fork, fork)]:
         if fork == PHASE0:
             continue
-        fork_epoch_field = fork.upper() + '_FORK_EPOCH'
+        fork_epoch_field = f'{fork.upper()}_FORK_EPOCH'
         assert getattr(spec.config, fork_epoch_field) <= epoch
 
 

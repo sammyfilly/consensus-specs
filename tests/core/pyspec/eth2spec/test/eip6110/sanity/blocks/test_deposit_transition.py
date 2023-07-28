@@ -39,7 +39,9 @@ def run_deposit_transition_block(spec, state, block, top_up_keys=[], valid=True)
     if valid:
         expected_pubkeys = [d.data.pubkey for d in block.body.deposits]
         deposit_receipts = block.body.execution_payload.deposit_receipts
-        expected_pubkeys = expected_pubkeys + [d.pubkey for d in deposit_receipts if (d.pubkey not in top_up_keys)]
+        expected_pubkeys += [
+            d.pubkey for d in deposit_receipts if (d.pubkey not in top_up_keys)
+        ]
         actual_pubkeys = [v.pubkey for v in state.validators[len(state.validators) - len(expected_pubkeys):]]
 
         assert actual_pubkeys == expected_pubkeys
@@ -58,7 +60,7 @@ def prepare_state_and_block(spec,
 
     # Prepare deposits
     deposit_data_list = []
-    for index in range(deposit_cnt):
+    for _ in range(deposit_cnt):
         deposit_data = build_deposit_data(spec,
                                           pubkeys[keypair_index],
                                           privkeys[keypair_index],

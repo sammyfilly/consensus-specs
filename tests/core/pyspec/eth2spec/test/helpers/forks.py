@@ -17,7 +17,7 @@ def is_post_fork(a, b):
         return b in [PHASE0, ALTAIR]
     if a == PHASE0:
         return b in [PHASE0]
-    raise ValueError("Unknown fork name %s" % a)
+    raise ValueError(f"Unknown fork name {a}")
 
 
 def is_post_altair(spec):

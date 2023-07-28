@@ -181,7 +181,7 @@ def test_compute_kzg_proof_within_domain(spec):
 
     roots_of_unity_brp = spec.bit_reversal_permutation(spec.ROOTS_OF_UNITY)
 
-    for i, z in enumerate(roots_of_unity_brp):
+    for z in roots_of_unity_brp:
         proof, y = spec.compute_kzg_proof_impl(polynomial, z)
 
         assert spec.verify_kzg_proof_impl(commitment, z, y, proof)
